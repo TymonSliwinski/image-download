@@ -1,0 +1,53 @@
+version: "3.7"
+
+services:
+    postgres:
+        container_name: postgres
+        image: postgres:14.3
+        restart: always
+        ports:
+            - "5432:5432"
+        environment:
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_DB: ${DB_NAME}
+        expose:
+            - "5432"
+        volumes:
+            - ./docker-postgres-init.sql:/docker-entrypoint-initdb.d/docker-postgres-init.sql
+        networks:
+            - network
+
+    redis:
+        container_name: redis
+        image: redis
+        ports:
+            - "6379:6379"
+        environment:
+            - ALLOW_EMPTY_PASSWORD=yes
+        command: redis-server
+        networks:
+            - network
+
+    backend:
+        container_name: backend
+        build: ./backend
+        ports:
+            - "5000:5000"
+        environment:
+            REDIS_URL: ${REDIS_URL}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_DB: ${DB_NAME}
+            DATABASE_URL: ${DB_URL}
+        # volumes:
+        #     - ./backend:/home/node/code
+        #     - /home/node/code/node_modules
+        depends_on:
+            - postgres
+            - redis
+        networks:
+            - network
+
+networks:
+    network: {}
